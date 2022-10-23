@@ -39,6 +39,7 @@ def serialize_post_optimized(post):
 
 def index(request):
     posts = Post.objects.prefetch_related('author')
+
     most_popular_posts = posts.annotate(num_likes=Count('likes')).order_by('-num_likes')[:5]
     most_popular_posts_ids = [post.id for post in most_popular_posts]
     posts_with_comments = posts.filter(id__in=most_popular_posts_ids).annotate(comments_count=Count('comments'))
@@ -48,7 +49,7 @@ def index(request):
 
     most_fresh_posts = posts.annotate(comments_count=Count('comments', distinct=True)).order_by('-published_at')[:5]
 
-    most_popular_tags = Tag.objects.annotate(num_posts=Count('posts')).order_by('-num_posts')[:5]
+    most_popular_tags = Tag.objects.popular()[:5]
 
     context = {
         'most_popular_posts': [
@@ -62,7 +63,7 @@ def index(request):
 
 def post_detail(request, slug):
     post = Post.objects.get(slug=slug)
-    comments = post.comments.annotate(Count('author', distinct=True), Count('post', distinct=True))
+    comments = Comment.objects.filter(post=post)
     serialized_comments = []
     for comment in comments:
         serialized_comments.append({
@@ -87,9 +88,9 @@ def post_detail(request, slug):
         'tags': [serialize_tag(tag) for tag in related_tags],
     }
 
-    most_popular_tags = Tag.objects.annotate(num_posts=Count('posts')).order_by('-num_posts')[:5]
+    most_popular_tags = Tag.objects.popular()[:5]
 
-    most_popular_posts = Post.objects.annotate(num_likes=Count('likes')).order_by('-num_likes')[:5]
+    most_popular_posts = []
 
     context = {
         'post': serialized_post,
@@ -104,9 +105,9 @@ def post_detail(request, slug):
 def tag_filter(request, tag_title):
     tag = Tag.objects.get(title=tag_title)
 
-    most_popular_tags = Tag.objects.annotate(num_posts=Count('posts')).order_by('-num_posts')[:5]
+    most_popular_tags = Tag.objects.popular()[:5]
 
-    most_popular_posts = Post.objects.annotate(num_likes=Count('likes')).order_by('-num_likes')[:5]
+    most_popular_posts = []
 
     related_posts = tag.posts.all()[:20]
 

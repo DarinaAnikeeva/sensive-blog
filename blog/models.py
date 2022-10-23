@@ -1,7 +1,13 @@
 from django.db import models
 from django.urls import reverse
 from django.contrib.auth.models import User
+from django.db.models import Count
 
+class TagQuerySet(models.QuerySet):
+
+    def popular(self):
+        popular_tag = self.annotate(num_posts=Count("posts")).order_by('-num_posts')
+        return popular_tag
 
 class Post(models.Model):
     title = models.CharField('Заголовок', max_length=200)
@@ -39,6 +45,7 @@ class Post(models.Model):
 
 class Tag(models.Model):
     title = models.CharField('Тег', max_length=20, unique=True)
+    objects = TagQuerySet.as_manager()
 
     def __str__(self):
         return self.title
@@ -59,6 +66,7 @@ class Comment(models.Model):
     post = models.ForeignKey(
         'Post',
         on_delete=models.CASCADE,
+        related_name='comments',
         verbose_name='Пост, к которому написан')
     author = models.ForeignKey(
         User,
