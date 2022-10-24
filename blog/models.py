@@ -9,7 +9,22 @@ class TagQuerySet(models.QuerySet):
         popular_tag = self.annotate(num_posts=Count("posts")).order_by('-num_posts')
         return popular_tag
 
+class PostQuerySet(models.QuerySet):
+
+    def popular(self):
+        popular_posts = self.annotate(num_likes=Count("likes")).order_by('-num_likes')
+        return popular_posts
+
+    def fetch_with_comments_count(self):
+        most_popular_posts_ids = [post.id for post in self]
+        posts_with_comments = Post.objects.filter(id__in=most_popular_posts_ids).annotate(comments_count=Count('comments'))
+        count_for_id = dict(posts_with_comments.values_list('id', 'comments_count'))
+        for post in self:
+            post.comments_count = count_for_id[post.id]
+        return self
+
 class Post(models.Model):
+    objects = PostQuerySet.as_manager()
     title = models.CharField('Заголовок', max_length=200)
     text = models.TextField('Текст')
     slug = models.SlugField('Название в виде url', max_length=200)
