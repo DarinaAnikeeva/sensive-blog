@@ -15,6 +15,7 @@ class PostQuerySet(models.QuerySet):
         popular_posts = self.annotate(num_likes=Count("likes")).order_by('-num_likes')
         return popular_posts
 
+    # Если нужно достать только комментарии к посту
     def fetch_with_comments_count(self):
         most_popular_posts_ids = [post.id for post in self]
         posts_with_comments = Post.objects.filter(id__in=most_popular_posts_ids).annotate(comments_count=Count('comments'))
