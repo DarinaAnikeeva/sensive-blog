@@ -18,7 +18,8 @@ class PostQuerySet(models.QuerySet):
     # Если нужно достать только комментарии к посту
     def fetch_with_comments_count(self):
         most_popular_posts_ids = [post.id for post in self]
-        posts_with_comments = Post.objects.filter(id__in=most_popular_posts_ids).annotate(comments_count=Count('comments'))
+        posts_with_comments = Post.objects.filter(id__in=most_popular_posts_ids) \
+                                          .annotate(comments_count=Count('comments'))
         count_for_id = dict(posts_with_comments.values_list('id', 'comments_count'))
         for post in self:
             post.comments_count = count_for_id[post.id]
